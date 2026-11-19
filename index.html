@@ -49,6 +49,10 @@ details[open] .btn{border-radius:14px 14px 0 0}
 .foot .ship-en{font:500 10.5px Montserrat;letter-spacing:.3em;color:var(--stone);margin-top:6px;direction:ltr}
 .foot img{width:54px;opacity:.85}
 .foot p{font:400 10px Montserrat;letter-spacing:.3em;color:var(--stone);margin-top:8px;direction:ltr}
+#sc{position:fixed;inset:0;background:rgba(62,61,59,.92);display:none;align-items:center;justify-content:center;padding:16px;z-index:10;overflow:auto}
+#sc.on{display:flex}
+#sc img{max-width:100%;max-height:100%;border-radius:10px;background:#fff}
+#sc button{position:fixed;top:14px;left:14px;width:40px;height:40px;border-radius:50%;border:0;background:var(--cream);color:var(--charcoal);font-size:18px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -78,7 +82,7 @@ details[open] .btn{border-radius:14px 14px 0 0}
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9.5 3.5c.6 1.2 1.4 1.8 2.5 1.8s1.9-.6 2.5-1.8L16 5l-1.5 4.5L19 20H5l4.5-10.5L8 5z"/><path d="M9.5 9.5h5"/></svg></span>
       <span class="tx"><span class="t">إنستقرام شهرة كيدز</span><span class="s">Instagram · @shuhrah.kids</span></span><span class="ar">‹</span>
     </a>
-    <a class="btn" href="size-chart.jpg" target="_blank" rel="noopener">
+    <a class="btn" href="size-chart.jpg" data-sc>
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="8" width="19" height="8" rx="1.5"/><path d="M6 8v3M9.5 8v4M13 8v3M16.5 8v4"/></svg></span>
       <span class="tx"><span class="t">جدول المقاسات</span><span class="s">Size chart</span></span><span class="ar">‹</span>
     </a>
@@ -89,18 +93,38 @@ details[open] .btn{border-radius:14px 14px 0 0}
     <p class="ship-en">WE SHIP WORLDWIDE</p>
   </footer>
 </main>
+<div id="sc" role="dialog" aria-label="جدول المقاسات"><img src="size-chart.jpg" alt="جدول المقاسات" loading="lazy"><button type="button" aria-label="إغلاق">✕</button></div>
 <script>
-/* Open Instagram / TikTok in the app on phones instead of the "download the app" web page */
 (function(){
-  var ua=navigator.userAgent||"", isAndroid=/android/i.test(ua), isIOS=/iphone|ipad|ipod/i.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
-  window.addEventListener("pageshow",function(){clearTimeout(window.__fb);});
+  var ua=navigator.userAgent||"",
+      isAndroid=/android/i.test(ua),
+      isIOS=/iphone|ipad|ipod/i.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1),
+      inIG=/Instagram/i.test(ua);
+  if("scrollRestoration" in history) history.scrollRestoration="manual";
+
+  /* Size chart opens inside the page (no navigation away) */
+  var sc=document.getElementById("sc");
+  function closeSC(){sc.classList.remove("on");document.body.style.overflow="";}
+  document.querySelector("a[data-sc]").addEventListener("click",function(e){e.preventDefault();sc.classList.add("on");document.body.style.overflow="hidden";});
+  sc.addEventListener("click",closeSC);
+
+  /* Every time the page is shown again (back / reopen) -> fresh links home */
+  function reset(){clearTimeout(window.__fb);closeSC();window.scrollTo(0,0);}
+  window.addEventListener("pageshow",reset);
   window.addEventListener("pagehide",function(){clearTimeout(window.__fb);});
+  document.addEventListener("visibilitychange",function(){if(!document.hidden)reset();});
+
+  /* Open Instagram / TikTok in the app on phones */
   if(!isAndroid&&!isIOS) return;
   var PKG={instagram:"com.instagram.android",tiktok:"com.zhiliaoapp.musically"};
   function webUrl(a,u){return a==="instagram"?"https://www.instagram.com/"+u+"/":"https://www.tiktok.com/@"+u;}
   document.querySelectorAll("a[data-app]").forEach(function(el){
     el.addEventListener("click",function(e){
       var a=el.dataset.app,u=el.dataset.user,web=webUrl(a,u);
+      if(a==="instagram"&&inIG){
+        /* already inside Instagram: jump straight to the profile, never load the web profile in this page */
+        e.preventDefault();location.href="instagram://user?username="+encodeURIComponent(u);return;
+      }
       if(isAndroid){
         e.preventDefault();
         var path=a==="instagram"?"www.instagram.com/_u/"+u+"/":"www.tiktok.com/@"+u;
@@ -109,13 +133,11 @@ details[open] .btn{border-radius:14px 14px 0 0}
       }
       if(isIOS&&a==="instagram"){
         e.preventDefault();
-        var left=false;
-        var onHide=function(){if(document.hidden)left=true;};
+        var left=false,onHide=function(){if(document.hidden)left=true;};
         document.addEventListener("visibilitychange",onHide);
         location.href="instagram://user?username="+encodeURIComponent(u);
         window.__fb=setTimeout(function(){document.removeEventListener("visibilitychange",onHide);if(!left&&!document.hidden)location.href=web;},1600);
       }
-      /* iOS TikTok: the normal https link is a universal link that opens the app from Safari */
     });
   });
 })();
